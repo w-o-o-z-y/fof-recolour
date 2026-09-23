@@ -1,0 +1,10 @@
+.DS_Store
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico

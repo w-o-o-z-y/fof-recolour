@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  background: #2c2c2c;
+  color: #e0e0e0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.header {
+  padding: 10px 12px;
+  border-bottom: 1px solid #3c3c3c;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-count {
+  color: #666;
+  flex: 1;
+}
+
+/* ── Buttons ── */
+button {
+  background: #18a0fb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+button:hover { background: #0d8de3; }
+button:disabled { background: #3c3c3c; color: #666; cursor: default; }
+
+button.secondary {
+  background: #3c3c3c;
+  color: #e0e0e0;
+}
+button.secondary:hover { background: #4c4c4c; }
+button.secondary.active {
+  background: #18a0fb;
+  color: white;
+}
+
+/* ── Control panel (contrast threshold) ── */
+.control-panel {
+  padding: 10px 12px;
+  border-bottom: 1px solid #3c3c3c;
+}
+
+.control-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+  color: #aaa;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: #3c3c3c;
+  outline: none;
+  margin: 4px 0 10px;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #18a0fb;
+  cursor: pointer;
+  border: none;
+}
+input[type="range"]:disabled { opacity: 0.4; cursor: default; }
+input[type="range"]:disabled::-webkit-slider-thumb { cursor: default; }
+
+.presets {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.presets button { flex: 1; padding: 5px 0; }
+
+.combo-count {
+  color: #888;
+  font-size: 10px;
+}
+
+input[type="number"]#threshold-input {
+  width: 36px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #555;
+  color: #e0e0e0;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 600;
+  text-align: right;
+  padding: 0 2px;
+  outline: none;
+  -moz-appearance: textfield;
+}
+input[type="number"]#threshold-input::-webkit-inner-spin-button,
+input[type="number"]#threshold-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+input[type="number"]#threshold-input:focus { border-bottom-color: #18a0fb; }
+input[type="number"]#threshold-input:disabled { opacity: 0.4; }
+
+/* ── Combos area ── */
+.combos-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+}
+
+.empty-state {
+  color: #999;
+  text-align: center;
+  padding: 48px 20px;
+  line-height: 1.8;
+}
+.empty-state strong { color: #888; }
+
+/* ── Grid ── */
+.combos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.combo-card {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+  border: 2px solid transparent;
+  background: #383838;
+  transition: border-color 0.1s;
+}
+.combo-card:hover  { border-color: #555; }
+.combo-card.active { border-color: #18a0fb; }
+
+/* Swatch: square SVG fills the card width */
+.combo-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  display: block;
+}
+
+.combo-info {
+  margin-top: 4px;
+  text-align: center;
+  line-height: 1.4;
+}
+.combo-ratio { font-size: 9px; color: #888; }
+
+.combo-badge {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 700;
+  border-radius: 3px;
+  padding: 1px 3px;
+  margin-top: 1px;
+  letter-spacing: 0.02em;
+}
+.badge-aaa  { background: #1a4f2a; color: #5ecb6a; }
+.badge-aa   { background: #15344f; color: #5aacf5; }
+.badge-pass { background: #3a3820; color: #b8b050; }
+
+/* ── Selection panel ── */
+.sel-panel {
+  border-top: 1px solid #3c3c3c;
+  padding: 8px 12px;
+  display: none;
+}
+.sel-panel.visible { display: block; }
+
+.sel-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.sel-row:last-child { margin-bottom: 0; }
+
+.sel-name {
+  flex: 1;
+  color: #aaa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.sel-actions { display: flex; gap: 5px; }
+
+.sel-fills {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.sel-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  flex-shrink: 0;
+}
+
+.sel-separator { color: #555; }
+
+.sel-hint { color: #555; font-size: 10px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button id="btn-generate" disabled>Generate combinations</button>
+  <div class="color-count" id="color-count"></div>
+</div>
+
+<div class="control-panel">
+  <div class="control-label">
+    <span>Minimum contrast</span>
+    <span><input type="number" id="threshold-input" min="1" max="21" step="0.1" value="2.6" disabled>:1</span>
+  </div>
+  <input type="range" id="contrast-slider" min="1" max="21" step="0.1" value="2.6" disabled>
+  <div class="presets">
+    <button class="secondary" data-preset="1">All</button>
+    <button class="secondary" data-preset="3">A</button>
+    <button class="secondary" data-preset="4.5">AA</button>
+    <button class="secondary" data-preset="7">AAA</button>
+  </div>
+  <div class="combo-count" id="combo-count">Loading colours…</div>
+</div>
+
+<div class="combos-area">
+  <div class="empty-state" id="empty-state">
+    Set a minimum contrast and select <strong>Generate combinations</strong> to find colour pairs
+  </div>
+  <div class="combos-grid" id="combos-grid"></div>
+</div>
+
+<div class="sel-panel" id="sel-panel">
+  <div class="sel-row">
+    <div class="sel-name" id="sel-name"></div>
+    <div class="sel-actions">
+      <button class="secondary" id="btn-swap">⇄ Swap</button>
+      <button class="secondary" id="btn-random">⚄ Random</button>
+    </div>
+  </div>
+  <div class="sel-row">
+    <div class="sel-fills" id="sel-fills"></div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+let allColors        = [];   // { id, name, r, g, b, lum }
+let validCombos      = [];   // { color1, color2, ratio }
+let activeIdx        = -1;
+let selection        = null; // SELECTION_CHANGED payload
+let currentThreshold = 2.6;
+let colorsLoaded     = false;
+
+// ── DOM refs ───────────────────────────────────────────
+const btnGenerate      = document.getElementById('btn-generate');
+const btnSwap          = document.getElementById('btn-swap');
+const btnRandom        = document.getElementById('btn-random');
+const contrastSlider   = document.getElementById('contrast-slider');
+const thresholdInput   = document.getElementById('threshold-input');
+const comboCount       = document.getElementById('combo-count');
+const presetButtons    = document.querySelectorAll('.presets button');
+const colorCountEl     = document.getElementById('color-count');
+const emptyState       = document.getElementById('empty-state');
+const combosGrid       = document.getElementById('combos-grid');
+const selPanel         = document.getElementById('sel-panel');
+const selName          = document.getElementById('sel-name');
+const selFills         = document.getElementById('sel-fills');
+
+// ── Helpers ────────────────────────────────────────────
+function contrastRatio(c1, c2) {
+  const hi = Math.max(c1.lum, c2.lum), lo = Math.min(c1.lum, c2.lum);
+  return (hi + 0.05) / (lo + 0.05);
+}
+function toHex(r, g, b) {
+  return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+}
+function plural(n, word) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
+// ── Combo computation ──────────────────────────────────
+// Unique pairs only (i < j) — orientation is chosen when applying
+function computeCombos(minContrast) {
+  const combos = [];
+  for (let i = 0; i < allColors.length; i++) {
+    for (let j = i + 1; j < allColors.length; j++) {
+      const ratio = contrastRatio(allColors[i], allColors[j]);
+      if (ratio >= minContrast) {
+        combos.push({ color1: allColors[i], color2: allColors[j], ratio });
+      }
+    }
+  }
+  combos.sort((a, b) => b.ratio - a.ratio);
+  return combos;
+}
+
+// ── Rendering ──────────────────────────────────────────
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+// Two hard-edged triangles — no gradient blending
+function buildSwatch(hex1, hex2) {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 40 40');
+  svg.classList.add('combo-swatch');
+  [['0,0 40,0 0,40', hex1], ['40,0 40,40 0,40', hex2]].forEach(([points, fill]) => {
+    const tri = document.createElementNS(SVG_NS, 'polygon');
+    tri.setAttribute('points', points);
+    tri.setAttribute('fill', fill);
+    svg.appendChild(tri);
+  });
+  return svg;
+}
+
+function badgeFor(ratio) {
+  if (ratio >= 7)   return ['AAA', 'badge-aaa'];
+  if (ratio >= 4.5) return ['AA',  'badge-aa'];
+  return ['A', 'badge-pass'];
+}
+
+function renderCombos(combos) {
+  validCombos = combos;
+  activeIdx = -1;
+  combosGrid.innerHTML = '';
+
+  if (combos.length === 0) {
+    emptyState.style.display = 'block';
+    colorCountEl.textContent = 'No valid combinations';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  colorCountEl.textContent = plural(combos.length, 'combination');
+
+  combos.forEach((combo, idx) => {
+    const [badgeText, badgeClass] = badgeFor(combo.ratio);
+
+    const card = document.createElement('div');
+    card.className = 'combo-card';
+    card.dataset.idx = idx;
+    card.title = `${combo.color1.name} / ${combo.color2.name}\nContrast: ${combo.ratio.toFixed(2)}:1`;
+
+    card.appendChild(buildSwatch(
+      toHex(combo.color1.r, combo.color1.g, combo.color1.b),
+      toHex(combo.color2.r, combo.color2.g, combo.color2.b)
+    ));
+
+    const info = document.createElement('div');
+    info.className = 'combo-info';
+    info.innerHTML = `
+      <div class="combo-ratio">${combo.ratio.toFixed(1)}:1</div>
+      <span class="combo-badge ${badgeClass}">${badgeText}</span>
+    `;
+    card.appendChild(info);
+
+    card.addEventListener('click', () => {
+      // Re-clicking the combo already on the selection flips it
+      const swap = idx === activeIdx && selection ? !isSwapped(combo) : false;
+      applyCombo(idx, swap);
+    });
+    combosGrid.appendChild(card);
+  });
+
+  tryDetectActiveCombo();
+}
+
+// ── Active combo & orientation ─────────────────────────
+// code.js puts the lightest detected colour in slot 0 and maps it to color1
+// (or color2 when swapped), so orientation is read straight off the selection.
+function isSwapped(combo) {
+  return !!(selection && selection.colors.length > 0 &&
+    selection.colors[0].variableId === combo.color2.id);
+}
+
+function syncSwapButton() {
+  btnSwap.classList.toggle('active', activeIdx >= 0 && isSwapped(validCombos[activeIdx]));
+}
+
+function setActive(idx) {
+  activeIdx = idx;
+  combosGrid.querySelectorAll('.combo-card').forEach(c => c.classList.remove('active'));
+  if (idx >= 0) {
+    const card = combosGrid.querySelector(`.combo-card[data-idx="${idx}"]`);
+    if (card) {
+      card.classList.add('active');
+      card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+  syncSwapButton();
+}
+
+function applyCombo(idx, swapped) {
+  if (idx < 0 || idx >= validCombos.length) return;
+  setActive(idx);
+  if (!selection) return;
+
+  const combo = validCombos[idx];
+  parent.postMessage({
+    pluginMessage: {
+      type: 'APPLY_COMBO',
+      color1Id: combo.color1.id,
+      color2Id: combo.color2.id,
+      swapped,
+    }
+  }, '*');
+}
+
+// Highlight the combo whose two variables are the selection's detected colours
+function tryDetectActiveCombo() {
+  if (!selection || validCombos.length === 0) return;
+  const colors = selection.colors;
+  if (colors.length < 2 || !colors[0].variableId || !colors[1].variableId) return;
+
+  const id0 = colors[0].variableId;
+  const id1 = colors[1].variableId;
+  const idx = validCombos.findIndex(c =>
+    (c.color1.id === id0 && c.color2.id === id1) ||
+    (c.color1.id === id1 && c.color2.id === id0)
+  );
+  if (idx >= 0) setActive(idx);
+}
+
+// ── Selection panel ────────────────────────────────────
+function addHint(text) {
+  const hint = document.createElement('span');
+  hint.className = 'sel-hint';
+  hint.textContent = text;
+  selFills.appendChild(hint);
+}
+
+function updateSelectionPanel(sel) {
+  selPanel.classList.toggle('visible', !!sel);
+  if (!sel) return;
+
+  selName.textContent = sel.name;
+  selFills.innerHTML = '';
+
+  if (sel.colors.length === 0) {
+    addHint('No solid fills detected');
+    return;
+  }
+
+  sel.colors.forEach((color, i) => {
+    const swatch = document.createElement('div');
+    swatch.className = 'sel-swatch';
+    swatch.style.background = toHex(color.r, color.g, color.b);
+    selFills.appendChild(swatch);
+
+    if (i < sel.colors.length - 1) {
+      const sep = document.createElement('span');
+      sep.className = 'sel-separator';
+      sep.textContent = '/';
+      selFills.appendChild(sep);
+    }
+  });
+
+  if (sel.colors.length === 1) addHint('— 1 colour detected');
+}
+
+// ── Threshold controls ─────────────────────────────────
+// Refresh the readout, live count, and active-preset highlight
+function refreshThreshold() {
+  thresholdInput.value = currentThreshold.toFixed(1);
+  contrastSlider.value = currentThreshold;
+
+  if (colorsLoaded) {
+    comboCount.textContent = `${plural(computeCombos(currentThreshold).length, 'combination')} available`;
+  }
+
+  presetButtons.forEach(btn => {
+    btn.classList.toggle('active', Math.abs(parseFloat(btn.dataset.preset) - currentThreshold) < 0.001);
+  });
+}
+
+contrastSlider.addEventListener('input', () => {
+  currentThreshold = parseFloat(contrastSlider.value);
+  refreshThreshold();
+});
+
+thresholdInput.addEventListener('change', () => {
+  const v = parseFloat(thresholdInput.value);
+  if (!isNaN(v)) currentThreshold = Math.round(Math.min(21, Math.max(1, v)) * 10) / 10;
+  refreshThreshold();
+});
+
+presetButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentThreshold = parseFloat(btn.dataset.preset);
+    refreshThreshold();
+  });
+});
+
+// ── Event listeners ────────────────────────────────────
+btnGenerate.addEventListener('click', () => {
+  renderCombos(computeCombos(currentThreshold));
+});
+
+btnSwap.addEventListener('click', () => {
+  if (activeIdx >= 0 && selection) applyCombo(activeIdx, !isSwapped(validCombos[activeIdx]));
+});
+
+btnRandom.addEventListener('click', () => {
+  // Every {idx, swapped} option except what's currently applied
+  const currentSwapped = activeIdx >= 0 && isSwapped(validCombos[activeIdx]);
+  const pool = [];
+  for (let i = 0; i < validCombos.length; i++) {
+    for (const s of [false, true]) {
+      if (i === activeIdx && s === currentSwapped) continue;
+      pool.push({ idx: i, swapped: s });
+    }
+  }
+  if (pool.length === 0) return;
+
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  applyCombo(pick.idx, pick.swapped);
+});
+
+// ── Plugin messages ────────────────────────────────────
+onmessage = (event) => {
+  const msg = event.data.pluginMessage;
+  if (!msg) return;
+
+  if (msg.type === 'COLORS_LOADED') {
+    allColors = msg.colors;
+    colorsLoaded = true;
+
+    btnGenerate.disabled = false;
+    contrastSlider.disabled = false;
+    thresholdInput.disabled = false;
+    presetButtons.forEach(b => { b.disabled = false; });
+
+    refreshThreshold();
+  }
+
+  else if (msg.type === 'SELECTION_CHANGED') {
+    const prevKey = selection ? selection.key : null;
+    selection = msg.selection;
+    // A different object shouldn't inherit the previous object's active combo
+    if (!selection || selection.key !== prevKey) setActive(-1);
+    updateSelectionPanel(selection);
+    tryDetectActiveCombo();
+    syncSwapButton();
+  }
+};
+
+// ── Startup ────────────────────────────────────────────
+refreshThreshold();
+parent.postMessage({ pluginMessage: { type: 'GET_COLORS' } }, '*');
+</script>
+</body>
+</html>
