@@ -3,6 +3,8 @@
 A Figma plugin that generates accessible foreground/background colour pairs from your colour variables (local and team library) and applies them to selected objects.
 This was made specifically to recolour Friends of Figma stickers, but feel free to use it wherever it works.
 
+https://github.com/user-attachments/assets/20d374ab-f89a-4007-bdec-00dbfa860989
+
 ## Installation
 
 The plugin needs just three files from this repo:
