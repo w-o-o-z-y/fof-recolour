@@ -8,3 +8,6 @@
 *.webp
 *.svg
 *.ico
+
+# Video
+*.mp4
